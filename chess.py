@@ -17,8 +17,12 @@ class Piece:
         return (i, j)
 
     def check_bounds(self, coord):
+        """
+        Checks if a move is out of the board
+        """
         if (coord[0] > 7 or coord[0] < 0) or (coord[1] > 7 or coord[1] < 0):
             return False
+
         return True
 
     def check_legal(self, init_square, final_square):
@@ -43,18 +47,43 @@ class Pawn(Piece):
 
     def legal_moves(self):
         coord = self.find_pos(board)
-
+        legal = []
         if self.team == 'black':
-            return [(coord[0]+1, coord[1])]
+            legal = [(coord[0]+1, coord[1])]
+            attack_squares = self.attack_squares()
+
+            for i in range(len(attack_squares)):
+                if backend[attack_squares[i][0]][attack_squares[i][1]].team == 'white':
+                    legal.append(attack_squares[i])
+
+            return legal
 
         elif self.team == 'white':
-            return [(coord[0]-1, coord[1])]
+            legal = [(coord[0]-1, coord[1])]
+            attack_squares = self.attack_squares()
 
+            for i in range(len(attack_squares)):
+                if backend[attack_squares[i][0]][attack_squares[i][1]].team == 'black':
+                    legal.append(attack_squares[i])
+
+            return legal
+
+    def attack_squares(self):
+        coord = self.find_pos(board)
+        if self.team == 'black':
+            return [(coord[0]+1, coord[1]+1), (coord[0]+1, coord[1]-1)]
+
+        elif self.team == 'white':
+            return [(coord[0]-1, coord[1]+1), (coord[0]-1, coord[1]-1)]
 
 class Rook(Piece):
     cat = 'rook'
 
     def legal_moves(self):
+        """
+        Iterates through row and column rook sits on, adds all available squares
+        excluding one rook sits on
+        """
         coord = self.find_pos(board)
         legal = []
 
@@ -73,6 +102,7 @@ class Rook(Piece):
                 legal.append((coord[0],i))
 
         return legal
+
 
 class Bishop(Piece):
     cat = 'bishop'
@@ -119,7 +149,6 @@ class Knight(Piece):
         return [mv_1, mv_2, mv_3, mv_4, mv_5, mv_6, mv_7, mv_8]
 
 
-
 class King(Piece):
     cat = 'king'
 
@@ -137,6 +166,7 @@ class King(Piece):
         mv_8 = (coord[0]-1, coord[1]+1)
 
         return [mv_1, mv_2, mv_3, mv_4, mv_5, mv_6, mv_7, mv_8]
+
 
 class Queen(Piece):
     cat = 'queen'
@@ -176,9 +206,11 @@ class Queen(Piece):
                 legal.append((coord[0],i))
 
         legal = list(set(legal))
-        print(legal)
+
         return legal
 
+class Empty(Piece):
+    cat = 'empty'
 
 def translate(l, n):
     """
@@ -194,29 +226,55 @@ def translate(l, n):
 
     return (number, letter)
 
-def move():
-    print(board)
-    l, n = input('Enter piece square: ').split()
-    l2, n2 = input('Enter move square: ').split()
 
+def move(side):
+    start = input('Enter piece square: ')
+    final = input('Enter move square: ')
+
+    l = start[0]
+    n = start[1]
+    l2 = final[0]
+    n2 = final[1]
     init_square = translate(l, n)
-
     final_square = translate(l2, n2)
 
-    val = backend[init_square[0]][init_square[1]]
+    if backend[init_square[0]][init_square[1]].team == side:
 
-    is_legal = val.check_legal(init_square, final_square)
+        val = backend[init_square[0]][init_square[1]]
 
-    if is_legal == True:
-        print('LEGAL')
-        board[init_square[0]][init_square[1]] = 0
-        board[final_square[0]][final_square[1]] = val.name
+        is_legal = val.check_legal(init_square, final_square)
 
-        print(board)
+        if is_legal == True:
+            print('Legal')
+            backend[init_square[0]][init_square[1]] = e
+            backend[final_square[0]][final_square[1]] = val
+            board[init_square[0]][init_square[1]] = e.name
+            board[final_square[0]][final_square[1]] = val.name
+
+            print(board)
+
+        else:
+            print('Illegal, try again.')
+            move(side)
 
     else:
-        print('Illegal')
+        print('Pick your own piece please.')
+        move(side)
 
+def game():
+    i = 0
+    playing = True
+    print(board)
+    print('CTRL-C to quit.')
+
+    while playing:
+        if i % 2 == 0:
+            side = 'white'
+
+        else:
+            side = 'black'
+        pl = move(side)
+        i += 1
 
 # black pawns
 bP1 = Pawn('bP1', 'black')
@@ -270,25 +328,27 @@ bK = King('bK', 'black')
 wQ = Queen('wQ', 'white')
 wK = King('wK', 'white')
 
+# empty
+e = Empty('x', 'empty')
 
 backend = np.array([[bR1, bKn1, bB1, bQ, bK, bB2, bKn2, bR2],
                  [bP1, bP2, bP3, bP4, bP5, bP6, bP7, bP8],
-                 ['0', '0', '0', '0', '0', '0', '0', '0'],
-                 ['0', '0', '0', '0', '0', '0', '0', '0'],
-                 ['0', '0', '0', '0', '0', '0', '0', '0'],
-                 ['0', '0', '0', '0', '0', '0', '0', '0'],
+                 [e, e, e, e, e, e, e, e],
+                 [e, e, e, e, e, e, e, e],
+                 [e, e, e, e, e, e, e, e],
+                 [e, e, e, e, e, e, e, e],
                  [wP1, wP2, wP3, wP4, wP5, wP6, wP7, wP8],
                  [wR1, wKn1, wB1, wQ, wK, wB2, wKn2, wR2]
                  ])
 
 board = np.array([[bR1.name, bKn1.name, bB1.name, bQ.name, bK.name, bB2.name, bKn2.name, bR2.name],
                  [bP1.name, bP2.name, bP3.name, bP4.name, bP5.name, bP6.name, bP7.name, bP8.name],
-                 ['0', '0', '0', '0', '0', '0', '0', '0'],
-                 ['0', '0', '0', '0', '0', '0', '0', '0'],
-                 ['0', '0', '0', '0', '0', '0', '0', '0'],
-                 ['0', '0', '0', '0', '0', '0', '0', '0'],
+                 [e.name, e.name, e.name, e.name, e.name, e.name, e.name, e.name],
+                 [e.name, e.name, e.name, e.name, e.name, e.name, e.name, e.name],
+                 [e.name, e.name, e.name, e.name, e.name, e.name, e.name, e.name],
+                 [e.name, e.name, e.name, e.name, e.name, e.name, e.name, e.name],
                  [wP1.name, wP2.name, wP3.name, wP4.name, wP5.name, wP6.name, wP7.name, wP8.name],
                  [wR1.name, wKn1.name, wB1.name, wQ.name, wK.name, wB2.name, wKn2.name, wR2.name]
                  ])
 
-play = move()
+play = game()
