@@ -16,6 +16,11 @@ class Piece:
 
         return (i, j)
 
+    def check_bounds(self, coord):
+        if (coord[0] > 7 or coord[0] < 0) or (coord[1] > 7 or coord[1] < 0):
+            return False
+        return True
+
     def check_legal(self, init_square, final_square):
         """
         Function to check if the move made is legal
@@ -53,29 +58,46 @@ class Rook(Piece):
         coord = self.find_pos(board)
         legal = []
 
-        available_vert = []
-        available_horiz = []
-
         for i in range(len(board)):
             if board[i][coord[1]] == board[coord[0]][coord[1]]:
                 continue
 
             elif board[i][coord[1]] != board[coord[0]][coord[1]]:
-                available_vert.append((i, coord[1]))
+                legal.append((i, coord[1]))
 
         for i in range(len(board)):
             if board[coord[0]][i] == board[coord[0]][coord[1]]:
                 continue
 
             elif board[coord[0]][i] != board[coord[0]][coord[1]]:
+                legal.append((coord[0],i))
 
-                available_horiz.append((coord[0],i))
-
-        return available_vert + available_horiz
-
+        return legal
 
 class Bishop(Piece):
     cat = 'bishop'
+
+    def legal_moves(self):
+
+        coord = self.find_pos(board)
+        in_bounds = self.check_bounds(coord)
+        directions = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
+        legal = []
+
+        for i in range(len(directions)):
+            new_coord = coord
+            in_bounds = True
+            while in_bounds == True:
+
+                new_coord = (new_coord[0] + directions[i][0], new_coord[1] + directions[i][1])
+                print(new_coord)
+                in_bounds = self.check_bounds(new_coord)
+                if in_bounds == True:
+                    legal.append(new_coord)
+                else:
+                    break
+
+        return legal
 
 
 class Knight(Piece):
@@ -119,27 +141,76 @@ class King(Piece):
 class Queen(Piece):
     cat = 'queen'
 
+    def legal_moves(self):
+
+        coord = self.find_pos(board)
+        legal = []
+        in_bounds = self.check_bounds(coord)
+        directions = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
+
+        for i in range(len(directions)):
+            new_coord = coord
+            in_bounds = True
+            while in_bounds == True:
+
+                new_coord = (new_coord[0] + directions[i][0], new_coord[1] + directions[i][1])
+                print(new_coord)
+                in_bounds = self.check_bounds(new_coord)
+                if in_bounds == True:
+                    legal.append(new_coord)
+                else:
+                    break
+
+        for i in range(len(board)):
+            if board[i][coord[1]] == board[coord[0]][coord[1]]:
+                continue
+
+            elif board[i][coord[1]] != board[coord[0]][coord[1]]:
+                legal.append((i, coord[1]))
+
+        for i in range(len(board)):
+            if board[coord[0]][i] == board[coord[0]][coord[1]]:
+                continue
+
+            elif board[coord[0]][i] != board[coord[0]][coord[1]]:
+                legal.append((coord[0],i))
+
+        legal = list(set(legal))
+        print(legal)
+        return legal
+
+
+def translate(l, n):
+    """
+    Function translates chess square e.g. 'A6', to array index e.g. [0][2]
+    """
+
+    letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+    numbers = [7, 6, 5, 4, 3, 2, 1, 0]
+    number_index = int(n)-1
+
+    number = numbers[number_index]
+    letter = letters.index(l)
+
+    return (number, letter)
 
 def move():
     print(board)
     l, n = input('Enter piece square: ').split()
     l2, n2 = input('Enter move square: ').split()
-    l = int(l)
-    n = int(n)
-    l2 = int(l2)
-    n2 = int(n2)
 
-    init_square = (l, n)
-    final_square = (l2, n2)
+    init_square = translate(l, n)
 
-    val = backend[l][n]
+    final_square = translate(l2, n2)
+
+    val = backend[init_square[0]][init_square[1]]
 
     is_legal = val.check_legal(init_square, final_square)
 
     if is_legal == True:
         print('LEGAL')
-        board[l][n] = 0
-        board[l2][n2] = val.name
+        board[init_square[0]][init_square[1]] = 0
+        board[final_square[0]][final_square[1]] = val.name
 
         print(board)
 
