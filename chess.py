@@ -6,12 +6,25 @@ class Piece:
         self.name = name
         self.team = team
 
-    def check_legal(self, l, n, l2, n2):
+    def find_pos(self, board):
+        """
+        Function to find the indices of the piece chosen to be moved
+        """
+        i, j = np.where(board == self.name)
+        i = int(i)
+        j = int(j)
+
+        return (i, j)
+
+    def check_legal(self, init_square, final_square):
+        """
+        Function to check if the move made is legal
+        """
         legal = False
 
-        legal_x, legal_y = self.legal_moves()
+        legal_moves = self.legal_moves()
 
-        if l2 - l == legal_y and n2 - n == legal_x:
+        if final_square in legal_moves:
             legal = True
 
         else:
@@ -24,26 +37,41 @@ class Pawn(Piece):
     cat = 'pawn'
 
     def legal_moves(self):
-        legal_y = 0
-        legal_x = 0
-
-        i, j = np.where(board == self.name)
-        i = int(i)
-        j = int(j)
+        coord = self.find_pos(board)
 
         if self.team == 'black':
-            legal_x = 0
-            legal_y = 1
+            return [(coord[0]+1, coord[1])]
 
         elif self.team == 'white':
-            legal_x = 0
-            legal_y = -1
-
-        return legal_x, legal_y
+            return [(coord[0]-1, coord[1])]
 
 
 class Rook(Piece):
     cat = 'rook'
+
+    def legal_moves(self):
+        coord = self.find_pos(board)
+        legal = []
+
+        available_vert = []
+        available_horiz = []
+
+        for i in range(len(board)):
+            if board[i][coord[1]] == board[coord[0]][coord[1]]:
+                continue
+
+            elif board[i][coord[1]] != board[coord[0]][coord[1]]:
+                available_vert.append((i, coord[1]))
+
+        for i in range(len(board)):
+            if board[coord[0]][i] == board[coord[0]][coord[1]]:
+                continue
+
+            elif board[coord[0]][i] != board[coord[0]][coord[1]]:
+
+                available_horiz.append((coord[0],i))
+
+        return available_vert + available_horiz
 
 
 class Bishop(Piece):
@@ -52,25 +80,41 @@ class Bishop(Piece):
 
 class Knight(Piece):
     cat = 'knight'
-    #position = np.where(board = super().name)
 
     def legal_moves(self):
-        legal_coords = []
 
-        legal_y = 0
-        legal_x = 0
+        coord = self.find_pos(board)
 
-        i, j = np.where(board == self.name)
-        i = int(i)
-        j = int(j)
-        
-        return False
+        mv_1 = (coord[0]-2, coord[1]-1)
+        mv_2 = (coord[0]-1, coord[1]-2)
+        mv_3 = (coord[0]+1, coord[1]-2)
+        mv_4 = (coord[0]+2, coord[1]-1)
+        mv_5 = (coord[0]+2, coord[1]+1)
+        mv_6 = (coord[0]+1, coord[1]+2)
+        mv_7 = (coord[0]-1, coord[1]+2)
+        mv_8 = (coord[0]-2, coord[1]+1)
+
+        return [mv_1, mv_2, mv_3, mv_4, mv_5, mv_6, mv_7, mv_8]
 
 
 
 class King(Piece):
     cat = 'king'
 
+    def legal_moves(self):
+
+        coord = self.find_pos(board)
+
+        mv_1 = (coord[0]-1, coord[1])
+        mv_2 = (coord[0]-1, coord[1]-1)
+        mv_3 = (coord[0], coord[1]-1)
+        mv_4 = (coord[0]+1, coord[1]-1)
+        mv_5 = (coord[0]+1, coord[1])
+        mv_6 = (coord[0]+1, coord[1]+1)
+        mv_7 = (coord[0], coord[1]+1)
+        mv_8 = (coord[0]-1, coord[1]+1)
+
+        return [mv_1, mv_2, mv_3, mv_4, mv_5, mv_6, mv_7, mv_8]
 
 class Queen(Piece):
     cat = 'queen'
@@ -85,9 +129,12 @@ def move():
     l2 = int(l2)
     n2 = int(n2)
 
+    init_square = (l, n)
+    final_square = (l2, n2)
+
     val = backend[l][n]
 
-    is_legal = val.check_legal(l, n, l2, n2)
+    is_legal = val.check_legal(init_square, final_square)
 
     if is_legal == True:
         print('LEGAL')
